@@ -89,21 +89,21 @@ def load_metajson(path, is_shown=False):
         print(f"Suboptimal segments: {len(suboptimal_segments)}")
         print()
 
-    # サブオプティマルなセグメントの詳細表示
-    if suboptimal_segments:
-        print("=== Suboptimal Segments ===")
-        for s in suboptimal_segments:
-            idx = s["instructions_index"]
-            dur = s["end_time"] - s["start_time"]
-            print(f"- Instruction {idx}: \"{instructions[idx]}\" (Duration: {dur:.2f} sec)")
-    else:
-        print("No suboptimal segments detected.")
+        # サブオプティマルなセグメントの詳細表示
+        if suboptimal_segments:
+            print("=== Suboptimal Segments ===")
+            for s in suboptimal_segments:
+                idx = s["instructions_index"]
+                dur = s["end_time"] - s["start_time"]
+                print(f"- Instruction {idx}: \"{instructions[idx]}\" (Duration: {dur:.2f} sec)")
+        else:
+            print("No suboptimal segments detected.")
 
     return statics_epi
 
 def main(data_dir):
 
-    files = glob.glob(os.path.join(data_dir, "**.json"), recursive=True)
+    files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = [] 
     date_counts = {}
     for f in files:
