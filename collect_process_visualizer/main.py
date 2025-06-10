@@ -20,6 +20,7 @@ aggregates statistics, and visualizes daily and cumulative data counts.
 """
 
 import json
+from datetime import datetime
 from datetime import timedelta
 import statistics
 import glob
@@ -101,21 +102,35 @@ def load_metajson(path, is_shown=False):
 
     return statics_epi
 
+def extract_date_from_folder(folder_name):
+    # フォルダ名から日付を抽出する
+    parts = folder_name.split('-')
+    if len(parts) >= 6:
+        date_str = parts[1] + parts[2] + parts[3]
+        try:
+            date = datetime.strptime(date_str, '%y%m%d')
+            return date.strftime('%Y-%m-%d')
+        except ValueError:
+            return None
+    return None
+
+
 def main(data_dir):
 
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = [] 
     date_counts = {}
     for f in files:
+        folder_name = os.path.basename(os.path.dirname(f))
+        date = extract_date_from_folder(folder_name)
+        if date:
+            if date not in date_counts:
+                date_counts[date] = 0
+            date_counts[date] += 1
+
+
         tmp_data_info = load_metajson(f)
         statics_all.append(tmp_data_info)
-        
-        # ファイル名から日付を抽出
-        date_str = os.path.basename(f).split('_')[0]
-        if date_str in date_counts:
-            date_counts[date_str] += 1
-        else:
-            date_counts[date_str] = 1
 
     # 総和を求める．
     total_duration = 0
