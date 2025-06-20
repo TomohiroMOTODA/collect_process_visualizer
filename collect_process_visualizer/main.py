@@ -20,12 +20,14 @@ aggregates statistics, and visualizes daily and cumulative data counts.
 """
 
 import json
+import argparse
 from datetime import datetime
 from datetime import timedelta
 import statistics
 import glob
 import os
 import matplotlib.pyplot as plt
+from collect_process_visualizer.filter_and_calculate import filter_data, calculate_stats
 
 def load_metajson(path, is_shown=False):
     # JSONファイルを読み込む
@@ -116,9 +118,21 @@ def extract_date_from_folder(folder_name):
             return None
     return None
 
+def parse_filter_args(filter_args):
+    """
+    コマンドライン引数からフィルタ条件を辞書としてパース
+    例: --filter key1=value1 --filter key2=value2
+    """
+    meta_filter = {}
+    if filter_args:
+        for f in filter_args:
+            if '=' in f:
+                k, v = f.split('=', 1)
+                meta_filter[k] = v
+    return meta_filter
 
-def main(data_dir):
 
+def main(data_dir, meta_filter=None):
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = []
     date_counts = {}
@@ -130,9 +144,12 @@ def main(data_dir):
                 date_counts[date] = 0
             date_counts[date] += 1
 
-
         tmp_data_info = load_metajson(f)
         statics_all.append(tmp_data_info)
+
+    # --- ここでフィルタリング ---
+    if meta_filter:
+        statics_all = filter_data(statics_all, meta_filter)
 
     dates = sorted(date_counts.keys())
     time_counts = {}
@@ -185,8 +202,9 @@ def main(data_dir):
         json.dump(analysis_result, f, indent=4)
 
 if __name__=="__main__":
-    import argparse
     parser = argparse.ArgumentParser(description="Load and analyze meta information from JSON files.")
     parser.add_argument('--data_dir', type=str, default='./data', help='Directory containing JSON files')
+    parser.add_argument('--filter', action='append', help='Filter condition in key=value format (can specify multiple times)')
     args = parser.parse_args()
-    main(args.data_dir)
+    meta_filter = parse_filter_args(args.filter)
+    main(args.data_dir, meta_filter=meta_filter)
