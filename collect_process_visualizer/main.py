@@ -46,7 +46,7 @@ def load_metajson(path, is_shown=False):
 
     # 命令の集計
     instructions = [instr[0] for instr in data["instructions"]]
-    
+
     if is_shown:
         print("=== Instructions Summary ===")
         print(f"Total instructions: {len(instructions)}\n")
@@ -73,6 +73,7 @@ def load_metajson(path, is_shown=False):
     min_time = min(durations)
 
     statics_epi = dict()
+    statics_epi["date"] = extract_date_from_folder(os.path.basename(path.split("/")[-2]))
     statics_epi["total_time"] = total_time
     statics_epi["total_duration"] = timedelta(seconds=total_time)
     statics_epi["mean_duration"] = mean_time
@@ -106,10 +107,11 @@ def extract_date_from_folder(folder_name):
     # フォルダ名から日付を抽出する
     parts = folder_name.split('-')
     if len(parts) >= 6:
-        date_str = parts[1] + parts[2] + parts[3]
+        date_str = parts[2] + parts[3] + parts[4]
         try:
             date = datetime.strptime(date_str, '%y%m%d')
-            return date.strftime('%Y-%m-%d')
+            date_fold = date.strftime('%Y-%m-%d')
+            return date_fold
         except ValueError:
             return None
     return None
@@ -118,7 +120,7 @@ def extract_date_from_folder(folder_name):
 def main(data_dir):
 
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
-    statics_all = [] 
+    statics_all = []
     date_counts = {}
     for f in files:
         folder_name = os.path.basename(os.path.dirname(f))
@@ -132,6 +134,18 @@ def main(data_dir):
         tmp_data_info = load_metajson(f)
         statics_all.append(tmp_data_info)
 
+    dates = sorted(date_counts.keys())
+    time_counts = {}
+    for d in dates:
+        total_tmp = 0
+        for epi in statics_all:
+            if epi["date"] == d:
+                total_tmp += epi["total_time"]
+
+        time_counts[d] = total_tmp/3600.
+        print (f"{d} : {total_tmp/3600.} (hours)")
+
+
     # 総和を求める．
     total_duration = 0
     for epi in statics_all:
@@ -143,12 +157,15 @@ def main(data_dir):
     dates = sorted(date_counts.keys())
     counts = [date_counts[date] for date in dates]
     cumulative_counts = [sum(counts[:i+1]) for i in range(len(counts))]
+    datasize = [time_counts[date] for date in dates]
+    cumulative_datasize = [sum(datasize[:i+1]) for i in range(len(datasize))]
 
     plt.figure(figsize=(10, 6))
-    plt.bar(dates, counts, color='blue', label='Daily Count')
-    plt.plot(dates, cumulative_counts, color='red', marker='o', label='Cumulative Count')
+    plt.bar(dates, datasize, color='blue', label='Daily Count')
+    # plt.plot(dates, cumulative_counts, color='red', marker='o', label='Cumulative Count')
+    plt.plot(dates, cumulative_datasize, color='red', marker='o', label='Cumulative Data Size')
     plt.xlabel('Date')
-    plt.ylabel('Count')
+    plt.ylabel('Data (hours)') # ('Episodes')
     plt.title('Daily Data Count and Cumulative Count')
     plt.legend()
     plt.xticks(rotation=45)
