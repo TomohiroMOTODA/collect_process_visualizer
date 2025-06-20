@@ -145,6 +145,7 @@ def main(data_dir, meta_filter=None, date_from=None):
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = []
     date_counts = {}
+    source_files = []
     for f in files:
         folder_name = os.path.basename(os.path.dirname(f))
         date = extract_date_from_folder(folder_name)
@@ -155,6 +156,7 @@ def main(data_dir, meta_filter=None, date_from=None):
                 if tmp_data_info["date"] < date_from:
                     continue
             statics_all.append(tmp_data_info)
+            source_files.append(f)
             if date:
                 if date not in date_counts:
                     date_counts[date] = 0
@@ -162,8 +164,11 @@ def main(data_dir, meta_filter=None, date_from=None):
 
     # --- ここでフィルタリング ---
     if meta_filter:
-        # すべてのメタ情報キーでフィルタ可能
         statics_all = filter_data(statics_all, meta_filter)
+        # フィルタ後のファイルリストも更新
+        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
+    else:
+        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
 
     # フィルタ後のdate_counts, time_countsを再計算
     filtered_date_counts = {}
@@ -185,8 +190,10 @@ def main(data_dir, meta_filter=None, date_from=None):
 
     # 総和を求める．
     total_duration = sum(epi["total_time"] for epi in statics_all)
-    print(f"Total duration : {total_duration} (sec)")
-    print(f"Total duration : {total_duration /3600.} (hours)")
+    total_segments = sum(epi["total_segments"] for epi in statics_all)
+    total_suboptimal_segments = sum(epi["suboptimal_segments"] for epi in statics_all)
+    unique_hsr_ids = sorted(set(epi.get("hsr_id", "") for epi in statics_all))
+    unique_locations = sorted(set(epi.get("location_name", "") for epi in statics_all))
 
     # 日付ごとのデータ件数を棒グラフで表示
     counts = [filtered_date_counts[date] for date in dates]
@@ -206,12 +213,21 @@ def main(data_dir, meta_filter=None, date_from=None):
     plt.savefig('./data/data_count_graph.png')
     plt.show()
 
-    # 分析結果をJSON形式で保存
+    # 分析結果をJSON形式で保存（拡張版）
     analysis_result = {
         "total_duration_sec": total_duration,
         "total_duration_hours": total_duration / 3600.0,
+        "total_segments": total_segments,
+        "total_suboptimal_segments": total_suboptimal_segments,
+        "unique_hsr_ids": unique_hsr_ids,
+        "unique_locations": unique_locations,
         "date_counts": filtered_date_counts,
-        "cumulative_counts": cumulative_counts
+        "cumulative_counts": cumulative_counts,
+        "source_files": filtered_files,
+        "filter_conditions": meta_filter if meta_filter else {},
+        "date_from": date_from if date_from else None,
+        "analyzed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data_dir": data_dir
     }
 
     with open('analysis_result.json', 'w') as f:
