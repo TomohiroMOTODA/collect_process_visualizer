@@ -145,12 +145,23 @@ def main(data_dir, meta_filter=None, date_from=None):
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = []
     date_counts = {}
-    source_files = [f for f in files]  # すべてのパスを格納
+    source_files = []
+    subtask_types = set()
     for f in files:
         folder_name = os.path.basename(os.path.dirname(f))
         date = extract_date_from_folder(folder_name)
         tmp_data_info = load_metajson(f)
         if tmp_data_info is not None:
+            # サブタスクの種類を収集
+            with open(f, "r") as jf:
+                meta = json.load(jf)
+                # サブタスクの種類があれば追加
+                if "subtasks" in meta and isinstance(meta["subtasks"], list):
+                    for sub in meta["subtasks"]:
+                        if isinstance(sub, dict) and "type" in sub:
+                            subtask_types.add(sub["type"])
+                        elif isinstance(sub, str):
+                            subtask_types.add(sub)
             # 日付フィルタ: date_from以降のみ
             if date_from is not None and tmp_data_info["date"]:
                 if tmp_data_info["date"] < date_from:
@@ -227,7 +238,8 @@ def main(data_dir, meta_filter=None, date_from=None):
         "filter_conditions": meta_filter if meta_filter else {},
         "date_from": date_from if date_from else None,
         "analyzed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "data_dir": data_dir
+        "data_dir": data_dir,
+        "subtask_types": sorted(list(subtask_types)),
     }
 
     with open('analysis_result.json', 'w') as f:
