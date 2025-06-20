@@ -84,7 +84,7 @@ def load_metajson(path, is_shown=False):
     statics_epi["total_segments"] = len(durations)
     statics_epi["suboptimal_segments"] = len(suboptimal_segments)
 
-    # メタ情報をstatics_epiに追加
+    # 利用できるフィルタkeyはここで追加されているもののみ
     statics_epi["bag_path"] = data.get("bag_path", "")
     statics_epi["hsr_id"] = str(data.get("hsr_id", ""))
     statics_epi["version"] = data.get("version", "")
@@ -92,8 +92,8 @@ def load_metajson(path, is_shown=False):
     statics_epi["interface"] = data.get("interface", "")
     statics_epi["git_branch"] = data.get("git_branch", "")
     statics_epi["git_hash"] = data.get("git_hash", "")
-    statics_epi["json_fullpath"] = os.path.abspath(path)  # ここでフルパスを追加
-    statics_epi["json_dir"] = os.path.dirname(os.path.abspath(path))  # ディレクトリ名のみ追加
+    statics_epi["json_fullpath"] = os.path.abspath(path)
+    statics_epi["json_dir"] = os.path.dirname(os.path.abspath(path))
 
     if is_shown:
         print(f"Total duration : {timedelta(seconds=total_time)} ({total_time:.2f} sec)")
