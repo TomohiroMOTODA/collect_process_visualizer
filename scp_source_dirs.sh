@@ -11,10 +11,16 @@ if [ -z "$REMOTE_DEST" ]; then
   exit 1
 fi
 
+# jqが無い場合はエラー表示して終了
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed. Please install jq (e.g., sudo apt-get install jq)."
+  exit 2
+fi
+
 # Extract unique directories from source_files in the JSON
 DIRS=$(jq -r '.source_files[]' "$SOURCE_JSON" | sort | uniq)
 
 for dir in $DIRS; do
   echo "Sending $dir to $REMOTE_DEST"
-  scp -r "$dir" "$REMOTE_DEST"
+  scp -o BatchMode=yes -r "$dir" "$REMOTE_DEST"
 done
