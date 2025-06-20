@@ -92,6 +92,7 @@ def load_metajson(path, is_shown=False):
     statics_epi["interface"] = data.get("interface", "")
     statics_epi["git_branch"] = data.get("git_branch", "")
     statics_epi["git_hash"] = data.get("git_hash", "")
+    statics_epi["json_fullpath"] = os.path.abspath(path)  # ここでフルパスを追加
 
     if is_shown:
         print(f"Total duration : {timedelta(seconds=total_time)} ({total_time:.2f} sec)")
@@ -167,7 +168,7 @@ def main(data_dir, meta_filter=None, date_from=None):
                 if tmp_data_info["date"] < date_from:
                     continue
             statics_all.append(tmp_data_info)
-            source_files.append(f)
+            source_files.append(os.path.abspath(f))  # フルパスで格納
             if date:
                 if date not in date_counts:
                     date_counts[date] = 0
@@ -176,10 +177,10 @@ def main(data_dir, meta_filter=None, date_from=None):
     # --- ここでフィルタリング ---
     if meta_filter:
         statics_all = filter_data(statics_all, meta_filter)
-        # フィルタ後のファイルリストも更新
-        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
+        # フィルタ後のファイルリストも更新（フルパスで出力）
+        filtered_files = [s["json_fullpath"] for s in statics_all if "json_fullpath" in s]
     else:
-        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
+        filtered_files = [s["json_fullpath"] for s in statics_all if "json_fullpath" in s]
 
     # フィルタ後のdate_counts, time_countsを再計算
     filtered_date_counts = {}
