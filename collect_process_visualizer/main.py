@@ -27,7 +27,7 @@ import statistics
 import glob
 import os
 import matplotlib.pyplot as plt
-from filter_and_calculate import filter_data
+from .filter_and_calculate import filter_data
 
 def load_metajson(path, is_shown=False):
     # JSONファイルを読み込む
