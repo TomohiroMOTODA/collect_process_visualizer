@@ -141,7 +141,7 @@ def parse_filter_args(filter_args):
     return meta_filter
 
 
-def main(data_dir, meta_filter=None):
+def main(data_dir, meta_filter=None, date_from=None):
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = []
     date_counts = {}
@@ -150,6 +150,10 @@ def main(data_dir, meta_filter=None):
         date = extract_date_from_folder(folder_name)
         tmp_data_info = load_metajson(f)
         if tmp_data_info is not None:
+            # 日付フィルタ: date_from以降のみ
+            if date_from is not None and tmp_data_info["date"]:
+                if tmp_data_info["date"] < date_from:
+                    continue
             statics_all.append(tmp_data_info)
             if date:
                 if date not in date_counts:
@@ -217,6 +221,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Load and analyze meta information from JSON files.")
     parser.add_argument('--data_dir', type=str, default='./data', help='Directory containing JSON files')
     parser.add_argument('--filter', action='append', help='Filter condition in key=value format (can specify multiple times)')
+    parser.add_argument('--date_from', type=str, help='Include data from this date (YYYY-MM-DD) and after')
     args = parser.parse_args()
     meta_filter = {}
     if args.filter:
@@ -224,4 +229,4 @@ if __name__=="__main__":
             if '=' in f:
                 k, v = f.split('=', 1)
                 meta_filter[k] = v
-    main(args.data_dir, meta_filter=meta_filter)
+    main(args.data_dir, meta_filter=meta_filter, date_from=args.date_from)
