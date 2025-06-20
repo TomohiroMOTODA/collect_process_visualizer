@@ -27,7 +27,7 @@ import statistics
 import glob
 import os
 import matplotlib.pyplot as plt
-from collect_process_visualizer.filter_and_calculate import filter_data, calculate_stats
+from filter_and_calculate import filter_data
 
 def load_metajson(path, is_shown=False):
     # JSONファイルを読み込む
@@ -84,6 +84,15 @@ def load_metajson(path, is_shown=False):
     statics_epi["total_segments"] = len(durations)
     statics_epi["suboptimal_segments"] = len(suboptimal_segments)
 
+    # メタ情報をstatics_epiに追加
+    statics_epi["bag_path"] = data.get("bag_path", "")
+    statics_epi["hsr_id"] = str(data.get("hsr_id", ""))
+    statics_epi["version"] = data.get("version", "")
+    statics_epi["location_name"] = data.get("location_name", "")
+    statics_epi["interface"] = data.get("interface", "")
+    statics_epi["git_branch"] = data.get("git_branch", "")
+    statics_epi["git_hash"] = data.get("git_hash", "")
+
     if is_shown:
         print(f"Total duration : {timedelta(seconds=total_time)} ({total_time:.2f} sec)")
         print(f"Mean duration  : {mean_time:.2f} sec")
@@ -139,50 +148,53 @@ def main(data_dir, meta_filter=None):
     for f in files:
         folder_name = os.path.basename(os.path.dirname(f))
         date = extract_date_from_folder(folder_name)
-        if date:
-            if date not in date_counts:
-                date_counts[date] = 0
-            date_counts[date] += 1
-
         tmp_data_info = load_metajson(f)
-        statics_all.append(tmp_data_info)
+        if tmp_data_info is not None:
+            statics_all.append(tmp_data_info)
+            if date:
+                if date not in date_counts:
+                    date_counts[date] = 0
+                date_counts[date] += 1
 
     # --- ここでフィルタリング ---
     if meta_filter:
+        # すべてのメタ情報キーでフィルタ可能
         statics_all = filter_data(statics_all, meta_filter)
 
-    dates = sorted(date_counts.keys())
+    # フィルタ後のdate_counts, time_countsを再計算
+    filtered_date_counts = {}
+    for epi in statics_all:
+        d = epi["date"]
+        if d not in filtered_date_counts:
+            filtered_date_counts[d] = 0
+        filtered_date_counts[d] += 1
+
+    dates = sorted(filtered_date_counts.keys())
     time_counts = {}
     for d in dates:
         total_tmp = 0
         for epi in statics_all:
             if epi["date"] == d:
                 total_tmp += epi["total_time"]
-
         time_counts[d] = total_tmp/3600.
         print (f"{d} : {total_tmp/3600.} (hours)")
 
-
     # 総和を求める．
-    total_duration = 0
-    for epi in statics_all:
-        total_duration += epi["total_time"]
+    total_duration = sum(epi["total_time"] for epi in statics_all)
     print(f"Total duration : {total_duration} (sec)")
     print(f"Total duration : {total_duration /3600.} (hours)")
 
     # 日付ごとのデータ件数を棒グラフで表示
-    dates = sorted(date_counts.keys())
-    counts = [date_counts[date] for date in dates]
+    counts = [filtered_date_counts[date] for date in dates]
     cumulative_counts = [sum(counts[:i+1]) for i in range(len(counts))]
     datasize = [time_counts[date] for date in dates]
     cumulative_datasize = [sum(datasize[:i+1]) for i in range(len(datasize))]
 
     plt.figure(figsize=(10, 6))
-    plt.bar(dates, datasize, color='blue', label='Daily Count')
-    # plt.plot(dates, cumulative_counts, color='red', marker='o', label='Cumulative Count')
-    plt.plot(dates, cumulative_datasize, color='red', marker='o', label='Cumulative Data Size')
+    plt.bar(dates, datasize, color='blue', label='Daily Data (hours)')
+    plt.plot(dates, cumulative_datasize, color='red', marker='o', label='Cumulative Data Size (hours)')
     plt.xlabel('Date')
-    plt.ylabel('Data (hours)') # ('Episodes')
+    plt.ylabel('Data (hours)')
     plt.title('Daily Data Count and Cumulative Count')
     plt.legend()
     plt.xticks(rotation=45)
@@ -194,7 +206,7 @@ def main(data_dir, meta_filter=None):
     analysis_result = {
         "total_duration_sec": total_duration,
         "total_duration_hours": total_duration / 3600.0,
-        "date_counts": date_counts,
+        "date_counts": filtered_date_counts,
         "cumulative_counts": cumulative_counts
     }
 
@@ -206,5 +218,10 @@ if __name__=="__main__":
     parser.add_argument('--data_dir', type=str, default='./data', help='Directory containing JSON files')
     parser.add_argument('--filter', action='append', help='Filter condition in key=value format (can specify multiple times)')
     args = parser.parse_args()
-    meta_filter = parse_filter_args(args.filter)
+    meta_filter = {}
+    if args.filter:
+        for f in args.filter:
+            if '=' in f:
+                k, v = f.split('=', 1)
+                meta_filter[k] = v
     main(args.data_dir, meta_filter=meta_filter)
