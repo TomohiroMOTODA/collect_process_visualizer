@@ -223,6 +223,8 @@ if __name__=="__main__":
     parser.add_argument('--filter', action='append', help='Filter condition in key=value format (can specify multiple times)')
     parser.add_argument('--date_from', type=str, help='Include data from this date (YYYY-MM-DD) and after')
     args = parser.parse_args()
+    # 例: --date_from 2024-06-01 で2024年6月1日以降のデータのみ集計
+    # 例: --filter hsr_id=HSR001 でhsr_idがHSR001のデータのみ集計
     meta_filter = {}
     if args.filter:
         for f in args.filter:
