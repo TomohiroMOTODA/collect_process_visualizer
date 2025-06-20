@@ -177,9 +177,9 @@ def main(data_dir, meta_filter=None, date_from=None):
     if meta_filter:
         statics_all = filter_data(statics_all, meta_filter)
         # フィルタ後のファイルリストも更新
-        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
+        filtered_files = [os.path.join(data_dir, s["bag_path"]) for s in statics_all if "bag_path" in s]
     else:
-        filtered_files = [s["bag_path"] for s in statics_all if "bag_path" in s]
+        filtered_files = [os.path.join(data_dir, s["bag_path"]) for s in statics_all if "bag_path" in s]
 
     # フィルタ後のdate_counts, time_countsを再計算
     filtered_date_counts = {}
