@@ -93,6 +93,7 @@ def load_metajson(path, is_shown=False):
     statics_epi["git_branch"] = data.get("git_branch", "")
     statics_epi["git_hash"] = data.get("git_hash", "")
     statics_epi["json_fullpath"] = os.path.abspath(path)  # ここでフルパスを追加
+    statics_epi["json_dir"] = os.path.dirname(os.path.abspath(path))  # ディレクトリ名のみ追加
 
     if is_shown:
         print(f"Total duration : {timedelta(seconds=total_time)} ({total_time:.2f} sec)")
@@ -177,10 +178,10 @@ def main(data_dir, meta_filter=None, date_from=None):
     # --- ここでフィルタリング ---
     if meta_filter:
         statics_all = filter_data(statics_all, meta_filter)
-        # フィルタ後のファイルリストも更新（フルパスで出力）
-        filtered_files = [s["json_fullpath"] for s in statics_all if "json_fullpath" in s]
+        # フィルタ後のファイルリストも更新（ディレクトリ名のみで出力）
+        filtered_files = [s["json_dir"] for s in statics_all if "json_dir" in s]
     else:
-        filtered_files = [s["json_fullpath"] for s in statics_all if "json_fullpath" in s]
+        filtered_files = [s["json_dir"] for s in statics_all if "json_dir" in s]
 
     # フィルタ後のdate_counts, time_countsを再計算
     filtered_date_counts = {}
