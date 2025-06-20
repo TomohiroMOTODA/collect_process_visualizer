@@ -145,7 +145,7 @@ def main(data_dir, meta_filter=None, date_from=None):
     files = glob.glob(os.path.join(data_dir, "*/*.json"), recursive=True)
     statics_all = []
     date_counts = {}
-    source_files = []
+    source_files = [f for f in files]  # すべてのパスを格納
     for f in files:
         folder_name = os.path.basename(os.path.dirname(f))
         date = extract_date_from_folder(folder_name)
