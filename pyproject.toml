@@ -1,0 +1,20 @@
+[project]
+name = "collect_process_visualizer"
+version = "0.1.0"
+description = "A tool to collect and visualize process information."
+authors = [
+	{ name = "motoda" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+dependencies = [
+    "matplotlib>=3.7.5",
+]
+
+[tool.setuptools]
+packages = ["collect_process_visualizer"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
